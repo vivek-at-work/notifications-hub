@@ -1,0 +1,9 @@
+node_modules
+.next
+build
+coverage
+.env
+.env.local
+*.log
+.git
+.storybook-static
