@@ -1,0 +1,101 @@
+{
+  "name": "api",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/api",
+  "projectType": "application",
+  "tags": ["type:app", "scope:backend", "build"],
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "../../scripts/with-venv.sh uvicorn app.main:app --reload --host 0.0.0.0 --port 8000",
+        "cwd": "apps/api"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "../../scripts/with-venv.sh pip install -r requirements.txt --target ./dist/deps",
+          "cp -r app dist/app"
+        ],
+        "cwd": "apps/api",
+        "parallel": false
+      },
+      "outputs": ["{projectRoot}/dist"]
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "../../scripts/with-venv.sh uvicorn app.main:app --host 0.0.0.0 --port 8000",
+        "cwd": "apps/api"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "../../scripts/with-venv.sh pytest tests/ -v --cov=app --cov-report=term-missing",
+        "cwd": "apps/api"
+      }
+    },
+    "test:coverage": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "../../scripts/with-venv.sh pytest tests/ -v --cov=app --cov-report=term-missing --cov-report=html --cov-fail-under=80",
+        "cwd": "apps/api"
+      }
+    },
+    "test:snapshot-update": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "../../scripts/with-venv.sh pytest tests/ --snapshot-update",
+        "cwd": "apps/api"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "../../scripts/with-venv.sh ruff check .",
+          "../../scripts/with-venv.sh ruff format --check ."
+        ],
+        "cwd": "apps/api",
+        "parallel": false
+      }
+    },
+    "lint:fix": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "../../scripts/with-venv.sh ruff check --fix .",
+          "../../scripts/with-venv.sh ruff format ."
+        ],
+        "cwd": "apps/api",
+        "parallel": false
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "../../scripts/with-venv.sh mypy app",
+        "cwd": "apps/api"
+      }
+    },
+    "docker:build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker build -t notifications-hub-api .",
+        "cwd": "apps/api"
+      }
+    },
+    "helm-chart-upload": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "apps/infrastructure/helm/api/helm-chart-upload.sh",
+        "env": {
+          "PREFIX": "api"
+        }
+      }
+    }
+  }
+}

@@ -1,62 +1,62 @@
 ## 1. Monorepo Scaffolding
 
-- [ ] 1.1 Initialize git repository with main, development, and stage branches (repo-bootstrap skill)
-- [ ] 1.2 Scaffold Nx monorepo root: package.json, nx.json, pnpm-workspace.yaml, .nvmrc (Node 24)
-- [ ] 1.3 Bootstrap Python API workspace: apps/api with uv, FastAPI, Strawberry, pyproject.toml (api-bootstrap skill)
-- [ ] 1.4 Bootstrap Next.js web workspace: apps/web with MUI, Apollo Client, Redux (web-bootstrap skill)
-- [ ] 1.5 Create libs/py/common with shared domain types, error codes, and placeholder engine
-- [ ] 1.6 Create libs/js/design-system and libs/js/notifications-ui shared packages
-- [ ] 1.7 Set up Docker Compose: Postgres 16, API, web, Temporal dev server
-- [ ] 1.8 Copy and activate CI/CD workflow templates from repo-bootstrap/github-actions
+- [x] 1.1 Initialize git repository with main, development, and stage branches (repo-bootstrap skill)
+- [x] 1.2 Scaffold Nx monorepo root: package.json, nx.json, pnpm-workspace.yaml, .nvmrc (Node 24)
+- [x] 1.3 Bootstrap Python API workspace: apps/api with uv, FastAPI, Strawberry, pyproject.toml (api-bootstrap skill)
+- [x] 1.4 Bootstrap Next.js web workspace: apps/web with MUI, Apollo Client, Redux (web-bootstrap skill)
+- [x] 1.5 Create libs/py/common with shared domain types, error codes, and placeholder engine
+- [x] 1.6 Create libs/js/design-system and libs/js/notifications-ui shared packages
+- [x] 1.7 Set up Docker Compose: Postgres 16, API, web, Temporal dev server
+- [x] 1.8 Copy and activate CI/CD workflow templates from repo-bootstrap/github-actions
 
 ## 2. Observability Foundation
 
-- [ ] 2.1 Implement app.logging module with typed emitters (log_startup, log_http, log_api, log_background_job)
-- [ ] 2.2 Add RequestLoggingMiddleware with x-request-id lifecycle and correlation propagation
-- [ ] 2.3 Configure OpenTelemetry instrumentation for FastAPI and Strawberry GraphQL
-- [ ] 2.4 Add /health endpoint excluded from HTTP logging
-- [ ] 2.5 Set up Prometheus metrics exporter with notifications_submitted_total and notifications_delivered_total stubs
-- [ ] 2.6 Configure LOG_FORMAT and LOG_LEVEL environment-based defaults
+- [x] 2.1 Implement app.logging module with typed emitters (log_startup, log_http, log_api, log_background_job)
+- [x] 2.2 Add RequestLoggingMiddleware with x-request-id lifecycle and correlation propagation
+- [x] 2.3 Configure OpenTelemetry instrumentation for FastAPI and Strawberry GraphQL
+- [x] 2.4 Add /health endpoint excluded from HTTP logging
+- [x] 2.5 Set up Prometheus metrics exporter with notifications_submitted_total and notifications_delivered_total stubs
+- [x] 2.6 Configure LOG_FORMAT and LOG_LEVEL environment-based defaults
 
 ## 3. Database Schema & Migrations
 
-- [ ] 3.1 Create SQLAlchemy async models: applications, application_api_keys
-- [ ] 3.2 Create models: channel_configs, templates (versioned, no locale)
-- [ ] 3.3 Create models: notifications, notification_recipients, notification_attempts, notification_events
-- [ ] 3.4 Create models: device_tokens, end_users, application_users
-- [ ] 3.5 Create models: notification_categories, user_notification_preferences, user_channel_preferences
-- [ ] 3.6 Add indexes: (application_id, created_at), (application_id, status), unique (application_id, idempotency_key), (provider_message_id)
-- [ ] 3.7 Set default retention_policy (90 days) on applications table
-- [ ] 3.8 Generate and apply initial Alembic migration
-- [ ] 3.9 Create repository layer with mandatory application_id scoping on all queries
+- [x] 3.1 Create SQLAlchemy async models: applications, application_api_keys
+- [x] 3.2 Create models: channel_configs, templates (versioned, no locale)
+- [x] 3.3 Create models: notifications, notification_recipients, notification_attempts, notification_events
+- [x] 3.4 Create models: device_tokens, end_users, application_users
+- [x] 3.5 Create models: notification_categories, user_notification_preferences, user_channel_preferences
+- [x] 3.6 Add indexes: (application_id, created_at), (application_id, status), unique (application_id, idempotency_key), (provider_message_id)
+- [x] 3.7 Set default retention_policy (90 days) on applications table
+- [x] 3.8 Generate and apply initial Alembic migration
+- [x] 3.9 Create repository layer with mandatory application_id scoping on all queries
 
 ## 4. Multi-Tenancy & Authentication
 
-- [ ] 4.1 Implement ApplicationService and ApplicationRepository (CRUD, tenant lookup)
-- [ ] 4.2 Implement API key generation, hashing, storage, and validation middleware
-- [ ] 4.3 Implement API key scope enforcement (notifications:send, notifications:read, devices:register, users:link)
-- [ ] 4.4 Implement Google OIDC integration for tenant admin and end-user JWT issuance
-- [ ] 4.5 Implement role-based authorization: platform_admin, tenant_admin, end_user, client_app
-- [ ] 4.6 Add authorization checks before business logic in resolver and service layers
-- [ ] 4.7 Implement audit logging for permission denials (kind="audit")
-- [ ] 4.8 Implement AWS Secrets Manager integration for channel credential storage (secret_ref pattern)
+- [x] 4.1 Implement ApplicationService and ApplicationRepository (CRUD, tenant lookup)
+- [x] 4.2 Implement API key generation, hashing, storage, and validation middleware
+- [x] 4.3 Implement API key scope enforcement (notifications:send, notifications:read, devices:register, users:link)
+- [x] 4.4 Implement Google OIDC integration for tenant admin and end-user JWT issuance
+- [x] 4.5 Implement role-based authorization: platform_admin, tenant_admin, end_user, client_app
+- [x] 4.6 Add authorization checks before business logic in resolver and service layers
+- [x] 4.7 Implement audit logging for permission denials (kind="audit")
+- [x] 4.8 Implement AWS Secrets Manager integration for channel credential storage (secret_ref pattern)
 
 ## 5. Channel Configuration
 
-- [ ] 5.1 Implement ChannelConfigService and ChannelConfigRepository
-- [ ] 5.2 Support email channel config (SES region, from-address, secret_ref)
-- [ ] 5.3 Support SMS channel config (SNS region, secret_ref)
-- [ ] 5.4 Support FCM push config (project ID, secret_ref)
-- [ ] 5.5 Support APNs push config (bundle_id, team_id, key_id, environment, secret_ref for .p8 key)
-- [ ] 5.6 Implement notification category CRUD (key, name, is_mandatory)
+- [x] 5.1 Implement ChannelConfigService and ChannelConfigRepository
+- [x] 5.2 Support email channel config (SES region, from-address, secret_ref)
+- [x] 5.3 Support SMS channel config (SNS region, secret_ref)
+- [x] 5.4 Support FCM push config (project ID, secret_ref)
+- [x] 5.5 Support APNs push config (bundle_id, team_id, key_id, environment, secret_ref for .p8 key)
+- [x] 5.6 Implement notification category CRUD (key, name, is_mandatory)
 
 ## 6. Template Management
 
-- [ ] 6.1 Implement TemplateService with versioned create, activate, and lookup by (application_id, key, channel)
-- [ ] 6.2 Implement placeholder schema validation using JSON Schema
-- [ ] 6.3 Implement template rendering engine with {{placeholder}} substitution
-- [ ] 6.4 Implement TemplateRepository with version history queries
-- [ ] 6.5 Add read-only GraphQL queries: templates (Connection), template (by ID) for tenant admin
+- [x] 6.1 Implement TemplateService with versioned create, activate, and lookup by (application_id, key, channel)
+- [x] 6.2 Implement placeholder schema validation using JSON Schema
+- [x] 6.3 Implement template rendering engine with {{placeholder}} substitution
+- [x] 6.4 Implement TemplateRepository with version history queries
+- [x] 6.5 Add read-only GraphQL queries: templates (Connection), template (by ID) for tenant admin
 
 ## 7. GraphQL Notification Ingestion
 
