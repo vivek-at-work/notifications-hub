@@ -1,0 +1,608 @@
+---
+description: Platform-wide GraphQL architecture, schema, federation, observability, and implementation standards.
+globs:
+  - "**/*.py"
+  - "**/*.graphql"
+  - "**/*.gql"
+  - "**/graphql/**"
+  - "**/schema/**"
+  - "**/resolvers/**"
+  - "**/services/**"
+  - "**/repositories/**"
+  - "**/models/**"
+alwaysApply: true
+---
+
+# GraphQL Platform Standards
+
+## Core Principles
+
+All GraphQL APIs must follow consistent platform conventions for:
+
+- Schema design
+- Queries
+- Mutations
+- Filtering
+- Pagination
+- Search
+- Relationship traversal
+- Authorization
+- Error handling
+- Performance
+- Federation compatibility
+- OpenTelemetry instrumentation
+- Layered architecture
+
+Favor consistency over resource-specific conventions.
+
+---
+
+# Architecture
+
+Every request follows this dependency chain:
+
+```
+GraphQL API
+      │
+      ▼
+ Service Layer
+      │
+      ▼
+Repository Layer
+      │
+      ▼
+ Database / ORM Models
+```
+
+Dependencies always flow downward.
+
+Never reverse dependency direction.
+
+---
+
+# Layer Responsibilities
+
+## GraphQL API
+
+Responsible for:
+
+- GraphQL schema
+- argument parsing
+- authorization
+- request validation
+- invoking services
+- mapping domain errors
+
+Never:
+
+- access ORM directly
+- execute SQL
+- implement business logic
+- contain transaction logic
+
+---
+
+## Service Layer
+
+Responsible for:
+
+- business rules
+- orchestration
+- domain validation
+- transactions
+- coordinating repositories
+- external service orchestration
+
+Services should:
+
+- be framework agnostic
+- not depend on GraphQL
+- not depend on HTTP
+
+---
+
+## Repository Layer
+
+Responsible for:
+
+- persistence
+- ORM interaction
+- query construction
+- batch loading
+- database access
+
+Repositories should never:
+
+- implement business rules
+- know GraphQL
+- know HTTP
+
+---
+
+## Models
+
+Models represent persistence only.
+
+Models should contain:
+
+- schema
+- relationships
+- constraints
+
+Models should not contain:
+
+- business workflows
+- authorization
+- GraphQL logic
+
+---
+
+# Dependency Rules
+
+Allowed
+
+```
+Resolver
+    ↓
+Service
+    ↓
+Repository
+    ↓
+Model
+```
+
+Forbidden
+
+```
+Resolver → Repository
+Resolver → ORM
+Resolver → Database
+
+Repository → Service
+
+Model → Repository
+Model → Service
+
+Service → GraphQL
+```
+
+Resolvers must never bypass the Service layer.
+
+---
+
+# Query Naming
+
+Single resource queries use singular names.
+
+Examples
+
+```graphql
+pipeline(id: ID!)
+execution(id: ID!)
+storage(id: ID!)
+```
+
+Collection queries use plural names.
+
+```graphql
+pipelines(...)
+executions(...)
+storages(...)
+```
+
+Collections should support
+
+- pagination
+- filtering
+- sorting
+- search
+- relationship traversal
+
+---
+
+# Filtering
+
+Every collection query should expose a typed `where` input.
+
+Preferred
+
+```graphql
+pipelines(
+    where: PipelineWhereInput
+)
+```
+
+Avoid flat filter objects like
+
+```graphql
+filter {
+    createdAfter
+    createdBefore
+    status
+}
+```
+
+---
+
+## Boolean Operators
+
+Support
+
+- AND
+- OR
+- NOT
+
+Example
+
+```graphql
+where: {
+    AND: [
+        { status: { eq: ACTIVE } }
+        { ownerId: { eq: "123" } }
+    ]
+}
+```
+
+---
+
+## Field Operators
+
+Prefer reusable operators.
+
+Equality
+
+- eq
+- neq
+- oneOf
+
+Comparison
+
+- gt
+- gte
+- lt
+- lte
+
+Strings
+
+- contains
+- startsWith
+- endsWith
+
+Nullable
+
+- isNull
+
+Operators should be strongly typed.
+
+---
+
+# Search
+
+Keep search separate from filtering.
+
+Preferred
+
+```graphql
+pipelines(
+    search: "daily"
+    where: {
+        status: { eq: ACTIVE }
+    }
+)
+```
+
+---
+
+# Pagination
+
+Support one pagination strategy per request.
+
+## Cursor
+
+Arguments
+
+- first
+- last
+- after
+- before
+
+Preferred for UI.
+
+Requires stable ordering.
+
+---
+
+## Page
+
+Arguments
+
+- page
+- pageSize
+
+Preferred for grids.
+
+---
+
+## Offset
+
+Arguments
+
+- limit
+- offset
+
+Use only for integrations and exports.
+
+---
+
+# Connection Types
+
+Collections return Connection types.
+
+```
+PipelineConnection
+PipelineEdge
+PageInfo
+```
+
+Every connection exposes
+
+- edges
+- totalCount
+- pageInfo
+
+Avoid returning raw lists.
+
+---
+
+# Resolver Standards
+
+Resolvers should
+
+- authorize
+- validate input
+- delegate to services
+- use DataLoaders
+- remain thin
+
+Resolvers should not
+
+- contain business logic
+- access repositories directly
+- perform database queries
+- perform transactions
+
+---
+
+# DataLoader
+
+All DataLoaders are request scoped.
+
+Requirements
+
+- request scoped
+- tenant safe
+- authorization aware
+- preserve ordering
+- deduplicate keys
+- batch efficiently
+- support partial failures
+
+Never cache across requests.
+
+---
+
+# Avoid N+1 Queries
+
+Never query inside loops.
+
+Avoid
+
+```python
+for pipeline in pipelines:
+    repository.find_runs(pipeline.id)
+```
+
+Prefer
+
+```python
+pipeline_run_loader.load_many(ids)
+```
+
+Batch
+
+- database
+- remote APIs
+- permission checks
+- metadata providers
+- storage systems
+
+---
+
+# Federation
+
+Schemas should remain Apollo Federation compatible.
+
+Prefer entity ownership.
+
+Example
+
+```graphql
+type Pipeline @key(fields: "id") {
+    id: ID!
+}
+```
+
+Rules
+
+- services own their entities
+- extend entities instead of duplicating them
+- avoid cross-service joins inside resolvers
+- use references instead of duplicated data
+- keep business logic in the owning service
+
+---
+
+# OpenTelemetry
+
+Instrument every GraphQL request.
+
+Trace hierarchy
+
+```
+GraphQL Request
+    ↓
+Resolver
+    ↓
+Service
+    ↓
+Repository
+    ↓
+Database
+```
+
+Requirements
+
+- root span per request
+- child span per resolver
+- child span per service
+- instrument repository/database calls
+- propagate trace context
+- record exceptions
+- attach request_id
+- attach tenant_id
+- attach operation name
+
+Never record
+
+- passwords
+- tokens
+- secrets
+- credentials
+- PII
+
+---
+
+# Transactions
+
+Transactions belong to the Service layer.
+
+Services own
+
+- begin
+- commit
+- rollback
+- retries
+
+Repositories never commit independently.
+
+---
+
+# Authorization
+
+Authorization occurs before business logic.
+
+DataLoaders and repositories must not bypass authorization.
+
+Never leak tenant data through caches.
+
+---
+
+# Error Handling
+
+Errors should be
+
+- deterministic
+- machine readable
+- strongly typed
+
+Validation errors include
+
+- code
+- field
+- message
+
+Permission failures are distinct from validation failures.
+
+Failed mutations must never persist partial data.
+
+Reuse platform error codes whenever possible.
+
+---
+
+# Performance
+
+Resolvers should avoid
+
+- N+1 queries
+- repeated lookups
+- waterfall loading
+- synchronous per-node fetches
+- unnecessary serialization
+
+Nested relationship traversal should rely on batching.
+
+---
+
+# Operational Constraints
+
+Ensure
+
+- stable pagination
+- composable queries
+- bounded batch sizes
+- authorization-aware loaders
+- tenant-safe caching
+- query depth limits
+- recursive traversal protection
+- bounded caches for subscriptions
+
+---
+
+# Dependency Injection
+
+Prefer constructor injection.
+
+Good
+
+```python
+class PipelineService:
+
+    def __init__(self, repository: PipelineRepository):
+        self.repository = repository
+```
+
+Avoid
+
+```python
+class PipelineService:
+
+    def __init__(self):
+        self.repository = PipelineRepository()
+```
+
+---
+
+# Code Generation Guidance
+
+When generating GraphQL code:
+
+1. Follow the architecture: GraphQL → Service → Repository → Model.
+2. Never access repositories or ORM directly from resolvers.
+3. Keep resolvers thin and delegate business logic to services.
+4. Keep services independent of GraphQL and HTTP.
+5. Use request-scoped DataLoaders for relationship resolution.
+6. Never introduce N+1 query patterns.
+7. Use typed `where` inputs with reusable field operators.
+8. Keep full-text search separate from structured filtering.
+9. Return Connection types for collections.
+10. Perform authorization before business logic.
+11. Execute transactions only in the Service layer.
+12. Roll back failed mutations completely.
+13. Return deterministic, machine-readable errors.
+14. Instrument requests with OpenTelemetry from resolver through repository.
+15. Propagate request ID and trace context to downstream services and background jobs.
+16. Design schemas to be Apollo Federation compatible.
+17. Preserve tenant isolation and authorization boundaries.
+18. Optimize nested relationship traversal through batching.
+19. Never log or trace secrets, credentials, or personally identifiable information.
+20. Prefer reusable platform conventions over resource-specific implementations.

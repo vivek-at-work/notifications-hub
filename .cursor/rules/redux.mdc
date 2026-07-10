@@ -1,0 +1,214 @@
+---
+globs: **/*.ts, **/*.tsx, **/*.d.ts
+alwaysApply: false
+---
+# Redux Toolkit Standards
+
+## General Principles
+
+* Use **Redux Toolkit (RTK)** for all Redux implementation.
+* Never use legacy Redux patterns (`createStore`, manual action types, switch reducers).
+* Prefer Redux Toolkit APIs:
+
+  * `configureStore`
+  * `createSlice`
+  * `createAsyncThunk` (or RTK Query if adopted)
+  * `createEntityAdapter`
+* Keep Redux logic predictable, typed, and feature-based.
+
+---
+
+## What Belongs in Redux
+
+Store only shared application state, such as:
+
+* Authenticated user
+* Permissions and roles
+* Theme or user preferences
+* Global notifications
+* Feature flags
+* Shopping cart
+* Shared filters
+* Cached API data (if not using RTK Query)
+
+Do **not** store:
+
+* Form input state
+* Modal open/close state (unless globally controlled)
+* Hover or focus state
+* Temporary UI state
+* Derived values that can be computed
+
+Prefer local React state (`useState`) for component-specific concerns.
+
+---
+
+## Folder Structure
+
+Organize Redux by feature:
+
+```text
+src/
+  store/
+    index.ts
+
+  features/
+    users/
+      usersSlice.ts
+      usersSelectors.ts
+      usersApi.ts
+      usersTypes.ts
+```
+
+Keep selectors, slice logic, and types together.
+
+---
+
+## Slice Guidelines
+
+Each slice should:
+
+* Represent one business domain.
+* Have a single responsibility.
+* Keep reducers small and focused.
+* Avoid unnecessary nesting.
+* Export selectors instead of exposing raw state shape.
+
+Example:
+
+```ts
+const usersSlice = createSlice({
+  name: 'users',
+  initialState,
+  reducers: {},
+  extraReducers: builder => {}
+});
+```
+
+---
+
+## Async Data
+
+Prefer:
+
+1. RTK Query (recommended)
+2. `createAsyncThunk`
+3. Service layer functions
+
+Never perform API calls directly inside React components when the data is shared across the application.
+
+---
+
+## Selectors
+
+Always access Redux state through selectors.
+
+```ts
+const user = useAppSelector(selectCurrentUser);
+```
+
+Avoid:
+
+```ts
+state.users.data[0]
+```
+
+Selectors should encapsulate state structure and derived logic.
+
+---
+
+## Dispatch
+
+Use typed hooks:
+
+```ts
+const dispatch = useAppDispatch();
+```
+
+Avoid importing the store directly into components.
+
+---
+
+## State Shape
+
+Keep state normalized.
+
+Avoid deeply nested objects.
+
+Use `createEntityAdapter` for collections with CRUD operations.
+
+---
+
+## Component Responsibilities
+
+Pages and container components:
+
+* Dispatch actions
+* Select data
+* Coordinate application state
+
+Presentational components:
+
+* Receive props
+* Render UI
+* Avoid direct Redux dependencies unless necessary
+
+---
+
+## Performance
+
+* Keep selectors memoized when appropriate (`createSelector`).
+* Prevent unnecessary re-renders.
+* Normalize large collections.
+* Avoid storing duplicated or derived data.
+
+---
+
+## Error Handling
+
+Async operations should expose:
+
+* Loading state
+* Success state
+* Error state
+
+Never swallow errors.
+
+Display meaningful feedback to users.
+
+---
+
+## TypeScript
+
+Strongly type:
+
+* RootState
+* AppDispatch
+* Slice state
+* Payloads
+* Async thunks
+* Selectors
+
+Avoid `any`.
+
+---
+
+## Best Practices
+
+* Keep business logic in slices, thunks, or services—not in components.
+* One slice per business domain.
+* Prefer immutable updates using Immer (provided by Redux Toolkit).
+* Reuse selectors and actions across the application.
+* Keep Redux serializable; do not store functions, DOM nodes, class instances, or Promises.
+
+---
+
+## Decision Process
+
+Before adding data to Redux, ask:
+
+1. Is this state shared across multiple features?
+2. Does it need to persist across routes or sessions?
+3. Is it business or application state rather than local UI state?
+
+If the answer is **no**, keep it in component state or a custom hook instead of Redux.

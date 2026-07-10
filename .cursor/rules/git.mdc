@@ -1,0 +1,55 @@
+---
+alwaysApply: true
+---
+# Git Rules
+
+## Before Making Changes
+- Check the current branch before starting work.
+- Never commit directly to `main` or `master`.
+- Create or use a feature branch.
+
+## Commits
+- Keep commits small and focused.
+- Make one logical change per commit.
+- Use Conventional Commits.
+
+Examples:
+- feat: add user authentication
+- fix: resolve login timeout issue
+- docs: update README
+- refactor: simplify API client
+- test: add unit tests for auth
+- chore: update dependencies
+
+## Before Committing
+- Run formatting.
+- Run linting.
+- Run all relevant tests.
+- Fix any errors before committing.
+
+## Pull Requests
+- Keep PRs focused on a single feature or fix.
+- Include a clear summary.
+- Mention any breaking changes.
+- Update documentation if behavior changes.
+
+## Safety
+- Never force-push shared branches.
+- Never delete branches without confirmation.
+- Never rewrite Git history unless explicitly requested.
+- Never commit secrets, API keys, or credentials.
+
+## AI Behavior
+Before suggesting a Git command:
+- Explain what the command will do.
+- Ask for confirmation before destructive commands such as:
+  - git reset --hard
+  - git push --force
+  - git clean -fd
+  - git rebase -i
+  - git branch -D
+
+If unsure about repository state, ask the user to run:
+- git status
+- git branch
+- git log --oneline -10

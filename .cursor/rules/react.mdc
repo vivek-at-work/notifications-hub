@@ -1,0 +1,422 @@
+---
+globs: **/*.ts, **/*.tsx, **/*.d.ts
+alwaysApply: false
+---
+# Component Principles
+
+Every component should:
+
+* Have one responsibility.
+* Be reusable.
+* Be composable.
+* Be predictable.
+* Be easy to test.
+* Be easy to understand.
+
+Prefer:
+
+* Composition over inheritance
+* Small focused components
+* Explicit APIs
+* Declarative code
+
+Avoid:
+
+* Large monolithic components
+* Business logic inside UI components
+* Duplicated code
+* Excessive prop drilling
+
+---
+
+# React Best Practices
+
+Use:
+
+* Functional components
+* React Hooks
+* TypeScript
+* Named exports where appropriate
+
+Avoid:
+
+* Class components
+* Unnecessary useEffect
+* Derived state
+* any type
+* Inline business logic inside JSX
+
+Keep:
+
+* Props minimal
+* State close to where it is used
+* Side effects isolated
+* Components pure whenever possible
+
+---
+
+# File Organization
+
+Recommended structure:
+
+```
+src/
+  components/
+    atoms/
+    molecules/
+    organisms/
+    templates/
+
+  features/
+
+  pages/
+
+  hooks/
+
+  services/
+
+  utils/
+
+  types/
+
+  constants/
+
+  assets/
+```
+
+Co-locate:
+
+* Tests
+* Styles
+* Stories
+* Documentation
+
+with their component whenever practical.
+
+---
+
+# Styling
+
+Follow the project's styling system consistently.
+
+Prefer:
+
+* CSS Modules
+* Tailwind
+* Styled Components
+* Design System tokens
+
+Avoid:
+
+* Large inline style objects
+* Hard-coded spacing
+* Hard-coded colors
+* Magic numbers
+
+Use:
+
+* Responsive layouts
+* Flexbox
+* CSS Grid
+* Relative units (rem/em)
+
+---
+
+# Accessibility (WCAG 2.2 AA)
+
+Every generated UI must satisfy:
+
+* WCAG 2.2 AA
+* ADA
+* Section 508
+
+Accessibility is mandatory.
+
+---
+
+## Semantic HTML
+
+Always prefer semantic elements.
+
+Use:
+
+* button
+* nav
+* main
+* section
+* article
+* form
+* label
+* header
+* footer
+* aside
+
+Avoid replacing semantic elements with div or span.
+
+---
+
+## Keyboard Accessibility
+
+Every interactive element must support:
+
+* Tab
+* Shift + Tab
+* Enter
+* Space
+* Escape (dialogs)
+* Arrow keys where appropriate
+
+Never create keyboard traps.
+
+---
+
+## Focus Management
+
+Always:
+
+* Preserve visible focus outlines.
+* Restore focus after closing dialogs.
+* Maintain logical tab order.
+* Support keyboard-only users.
+
+---
+
+## Forms
+
+Every form should:
+
+* Have associated labels.
+* Display inline validation.
+* Associate errors using aria-describedby.
+* Clearly indicate required fields.
+* Never rely only on placeholders.
+
+---
+
+## Buttons & Links
+
+Buttons:
+
+* Trigger actions.
+
+Links:
+
+* Navigate.
+
+Never use clickable div or span elements.
+
+Interactive targets should be at least **44 × 44 CSS pixels** where practical.
+
+---
+
+## Images
+
+Decorative images:
+
+```
+alt=""
+```
+
+Informative images:
+
+Provide meaningful alt text.
+
+Complex graphics:
+
+Provide accessible descriptions.
+
+---
+
+## Color & Contrast
+
+Meet WCAG AA:
+
+* 4.5:1 text contrast
+* 3:1 large text and UI controls
+
+Never rely on color alone to communicate meaning.
+
+---
+
+## Motion
+
+Respect:
+
+```
+prefers-reduced-motion
+```
+
+Avoid unnecessary animations.
+
+Animations should never block task completion.
+
+---
+
+## Responsive Design
+
+Use:
+
+* Mobile-first design
+* Flexible layouts
+* CSS Grid
+* Flexbox
+
+Support:
+
+* Mobile
+* Tablet
+* Desktop
+
+No horizontal scrolling.
+
+Support browser zoom up to 200%.
+
+---
+
+## Dialogs
+
+Dialogs should:
+
+* Trap focus while open.
+* Close with Escape.
+* Restore focus to the trigger.
+* Include appropriate ARIA attributes when native semantics are insufficient.
+
+---
+
+# State Management
+
+Prefer:
+
+Local State
+
+↓
+
+Context
+
+↓
+
+Global State
+
+Only elevate state when multiple components require it.
+
+Keep server state separate from UI state.
+
+---
+
+# Performance
+
+Avoid premature optimization.
+
+Use:
+
+* React.memo only when beneficial
+* useMemo only when measurable
+* useCallback only when necessary
+
+Always:
+
+* Lazy-load heavy components.
+* Use stable keys.
+* Prevent unnecessary renders.
+
+---
+
+# Code Quality
+
+Generate code that is:
+
+* Readable
+* Maintainable
+* Self-documenting
+
+Prefer:
+
+* Clear naming
+* Small functions
+* Pure functions
+* Explicit return types
+
+Remove:
+
+* Dead code
+* Unused props
+* Console logs
+* Commented-out code
+
+Comments should explain "why," not "what."
+
+---
+
+# Testing Expectations
+
+Generated components should be easy to test.
+
+Consider:
+
+* User behavior
+* Accessibility
+* Keyboard navigation
+* Edge cases
+* Loading states
+* Empty states
+* Error states
+
+Test behavior rather than implementation details.
+
+---
+
+# Modern UI Principles
+
+Interfaces should be:
+
+* Clean
+* Consistent
+* Minimal
+* Responsive
+* Accessible
+* Fast
+
+Always provide:
+
+* Loading states
+* Empty states
+* Error handling
+* Success feedback
+* Skeleton loaders where appropriate
+
+Avoid layout shifts.
+
+---
+
+# Component Checklist
+
+Before generating a component, ensure:
+
+* Correct Atomic Design layer.
+* Single responsibility.
+* Reusable and composable.
+* TypeScript types defined.
+* Accessible (WCAG 2.2 AA).
+* Semantic HTML used.
+* Keyboard accessible.
+* Responsive.
+* Proper loading, empty, and error states.
+* No unnecessary re-renders.
+* Business logic separated from presentation.
+* Clean, maintainable code.
+
+---
+
+# Decision Process
+
+When generating code:
+
+1. Reuse existing components before creating new ones.
+2. Choose the smallest appropriate Atomic Design layer.
+3. Separate business logic into hooks, services, or page components.
+4. Prioritize accessibility and semantic HTML.
+5. Keep APIs small and intuitive.
+6. Optimize only when necessary.
+7. Prefer clarity over cleverness.
+8. Produce production-ready, enterprise-quality code.

@@ -1,0 +1,42 @@
+name: Setup monorepo toolchain
+description: Node, pnpm, Python, and dependency install for the monorepo
+
+inputs:
+  node-version:
+    description: Node.js version
+    required: false
+    default: "24"
+  pnpm-version:
+    description: pnpm version
+    required: false
+    default: "9.15.0"
+  python-version:
+    description: Python version
+    required: false
+    default: "3.12.13"
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: ${{ inputs.pnpm-version }}
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install Node dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile=false
+
+    - name: Install Python dependencies
+      shell: bash
+      run: pip install -r apps/api/requirements-dev.txt

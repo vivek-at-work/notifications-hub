@@ -1,0 +1,96 @@
+---
+description: Create or update Architecture Decision Records whenever architectural decisions are made.
+globs:
+  - "**/*.py"
+  - "**/*.yaml"
+  - "**/*.yml"
+  - "**/*.toml"
+alwaysApply: false
+---
+
+# Architecture Decision Records
+
+Whenever introducing architectural changes, create or update an ADR.
+
+Architectural changes include:
+
+- logging
+- caching
+- authentication
+- authorization
+- messaging
+- eventing
+- databases
+- queues
+- observability
+- tracing
+- metrics
+- deployment
+- infrastructure
+- api protocall
+- background processing 
+
+---
+
+## ADR Location
+
+Use:
+
+```
+adr/
+```
+
+---
+
+## Naming
+
+```
+0001-title.md
+0002-title.md
+```
+
+Never overwrite previous ADRs.
+
+---
+
+## Template
+
+Every ADR should contain:
+
+# Title
+
+## Status
+
+Accepted
+
+## Context
+
+## Problem
+
+## Decision
+
+## Alternatives Considered
+
+## Consequences
+
+## References
+
+---
+
+## Updates
+
+If an ADR already exists for the same topic:
+
+Update it instead of creating duplicates.
+
+---
+
+## Logging ADR
+
+When introducing structlog include:
+
+- Why structlog
+- JSON logging
+- Request IDs
+- Event taxonomy
+- Future OpenTelemetry integration

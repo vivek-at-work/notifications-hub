@@ -1,0 +1,243 @@
+---
+description: "Temporal Python workflow orchestration — layering, naming, and SDK conventions"
+globs: **/*
+alwaysApply: false
+---
+
+# Temporal Python SDK
+
+You are an expert Python developer with extensive experience in Temporal.io for workflow orchestration. Follow PEP 8, PEP 257, and type hints on all public functions.
+
+## Architecture
+
+Every Temporal execution follows this dependency chain:
+
+```
+Workflow
+    │
+    ▼
+Activity
+    │
+    ▼
+Service
+    │
+    ▼
+Repository
+    │
+    ▼
+Model
+```
+
+Dependencies always flow downward. Never reverse dependency direction.
+
+---
+
+## Layer Responsibilities
+
+### Workflow
+
+Responsible for:
+
+- orchestration and control flow
+- activity sequencing, fan-out, and fan-in
+- timers, signals, queries, and child workflows
+- retry/timeout policy at the workflow boundary
+
+Never:
+
+- contain business logic
+- access the database or ORM
+- call repositories or services directly
+- perform I/O
+
+Workflows must only coordinate activities.
+
+---
+
+### Activity
+
+Responsible for:
+
+- invoking the service layer
+- translating activity inputs/outputs
+- surfacing failures back to Temporal for retry
+
+Never:
+
+- contain business logic
+- access the database or ORM directly
+- bypass the service layer
+
+Activities are thin adapters between Temporal and application code.
+
+---
+
+### Service
+
+Responsible for:
+
+- business rules
+- domain validation
+- orchestration across repositories
+- transactions
+- external system coordination
+
+Services should be framework agnostic and must not depend on Temporal APIs.
+
+---
+
+### Repository
+
+Responsible for:
+
+- persistence
+- ORM interaction
+- query construction
+- database access
+
+Repositories must not contain business rules or Temporal logic.
+
+---
+
+### Model
+
+Models represent persistence only (schema, relationships, constraints). They must not contain business workflows, authorization, or Temporal logic.
+
+---
+
+## Dependency Rules
+
+Allowed
+
+```
+Workflow → Activity → Service → Repository → Model
+```
+
+Forbidden
+
+```
+Workflow → Service
+Workflow → Repository
+Workflow → Model
+
+Activity → Repository
+Activity → Model
+
+Repository → Service
+Model → Service
+Model → Repository
+```
+
+Activities must never bypass the Service layer.
+
+---
+
+## Coding Standards
+
+### Decorators and Naming
+
+- Use `@workflow.defn` on all workflows and `@activity.defn` on all activities.
+- Workflows: snake_case with `_workflow` suffix (e.g. `process_order_workflow`).
+- Activities: snake_case with `_activity` suffix (e.g. `send_email_activity`).
+- Classes: PascalCase. Functions, variables, files: snake_case.
+
+### Error Handling
+
+- Let services raise domain errors; activities log context and re-raise for Temporal retries.
+- Configure retries and timeouts on `workflow.execute_activity`, not with ad-hoc loops in workflows.
+- Do not swallow exceptions in activities unless converting to a typed domain error.
+
+### Determinism (Workflows)
+
+- No I/O, randomness, or non-deterministic calls inside workflow code.
+- Use `workflow.execute_activity` (or child workflows) for all side effects.
+
+---
+
+## Project Structure
+
+```
+workflows/      # orchestration only
+activities/     # thin Temporal adapters
+services/       # business logic
+repositories/   # persistence
+models/         # ORM models
+tests/          # workflow, activity, and service tests
+```
+
+Keep workflows and activities free of business logic. Put rules in `services/`.
+
+---
+
+## Dependencies
+
+- Use `temporalio` for Temporal integration.
+- Do not use Celery or other conflicting task-queue systems for the same work.
+
+---
+
+## Examples
+
+### Workflow (orchestration only)
+
+```python
+from datetime import timedelta
+
+from temporalio import workflow
+
+
+@workflow.defn
+class ProcessOrderWorkflow:
+    """Orchestrate order processing steps."""
+
+    @workflow.run
+    async def run(self, order_id: str) -> None:
+        await workflow.execute_activity(
+            validate_order_activity,
+            order_id,
+            start_to_close_timeout=timedelta(seconds=30),
+        )
+        await workflow.execute_activity(
+            send_confirmation_activity,
+            order_id,
+            start_to_close_timeout=timedelta(seconds=30),
+        )
+```
+
+### Activity (delegates to service)
+
+```python
+from temporalio import activity
+
+from app.services.order_service import OrderService
+
+
+@activity.defn
+async def send_confirmation_activity(order_id: str) -> None:
+    """Run confirmation business logic via the service layer."""
+    service = OrderService()
+    await service.send_confirmation(order_id)
+```
+
+### Service (business logic)
+
+```python
+class OrderService:
+    def __init__(self, repository: OrderRepository) -> None:
+        self.repository = repository
+
+    async def send_confirmation(self, order_id: str) -> None:
+        order = await self.repository.get_by_id(order_id)
+        if order is None:
+            raise OrderNotFoundError(order_id)
+        # business rules and side effects live here
+```
+
+---
+
+## Testing
+
+- Test services with unit tests (mock repositories).
+- Test activities by mocking services.
+- Test workflows with Temporal's test environment or workflow replay.
+- Maintain meaningful coverage on orchestration paths and service behavior.

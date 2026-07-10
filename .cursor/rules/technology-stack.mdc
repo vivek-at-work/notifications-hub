@@ -1,0 +1,112 @@
+---
+description: "Platform technology stack, monorepo layout, and related rule references"
+alwaysApply: true
+---
+
+# Technology Stack
+
+---
+## ALWAYS USE 
+- **PYTHON_VERSION:** "3.12.13"
+- **NODE_VERSION:** "24"
+- **PNPM_VERSION:** "9.15.0"
+
+## Monorepo
+
+- **Workspace:** Nx monorepo
+- **JavaScript tooling:** pnpm
+- **Node.js:** **24** (required — do not use 18, 20, or 22 unless explicitly approved)
+- **Python tooling:** uv
+- **Apps:** `apps/api`, `apps/web`
+- **Shared libraries:** `libs/py/common`
+- **Local runtime:** Docker Compose (Postgres, API, web)
+
+**Node pinning:** keep `.nvmrc`, root `package.json` `engines`, CI `NODE_VERSION`, and web Docker `FROM node:…` on **24**.
+
+---
+
+## Node.js runtime (required)
+
+- **Version:** Node.js **24.x** for all JavaScript/TypeScript work (local dev, Nx, pnpm, CI, Docker).
+- **Local dev:** use `nvm use` / `fnm use` with root `.nvmrc` set to `24`.
+- **CI:** `NODE_VERSION` in `.github/workflows/ci.yml` must be `"24"`.
+- **Containers:** web images must use `node:24-alpine` (or newer 24 tag).
+- **Workspace:** root `package.json` must declare `"engines": { "node": ">=24" }`.
+
+---
+
+## Backend
+
+| Area | Technology |
+|------|------------|
+| Language | Python 3.12+ |
+| Framework | FastAPI |
+| API | Strawberry GraphQL |
+| ORM | SQLAlchemy (async) |
+| Migrations | Alembic |
+| Workflows | Temporal |
+| Logging | Structured logging (`app.logging`) |
+| Linting / types | Ruff, mypy |
+
+**Request flow:** GraphQL → Service → Repository → Model
+
+See `graphql.mdc`, `python.mdc`, `logging.mdc`, and `temporal.mdc`.
+
+**Temporal flow:** Workflow → Activity → Service → Repository → Model
+
+Workflows and activities must not contain business logic.
+
+---
+
+## Frontend
+
+| Area | Technology |
+|------|------------|
+| Runtime | Node.js 24 |
+| Framework | Next.js 15 |
+| Language | TypeScript |
+| UI library | React 18 |
+| Components | Material UI (MUI) |
+| Data fetching | Apollo Client (GraphQL) |
+| State | Redux Toolkit |
+| Component dev | Storybook |
+| Testing | Vitest, Testing Library |
+
+See `react.mdc`, `typescript.mdc`, and `redux.mdc`.
+
+---
+
+## Data & Persistence
+
+- **Database:** PostgreSQL
+- **Access:** Repository layer only; no direct ORM access from GraphQL resolvers or Temporal workflows/activities
+
+---
+
+## Cloud & Messaging
+
+- **Queue:** AWS SQS (low-priority ingestion)
+- **Events:** AWS EventBridge (delivery callbacks)
+- **Email:** AWS SES
+- **SMS:** AWS SNS or Twilio
+- **Persistence (prod):** RDS / Postgres
+
+Document architectural changes in ADRs (`adr.mdc`).
+
+---
+
+## Cross-Cutting Standards
+
+| Topic | Rule file |
+|-------|-----------|
+| Code quality | `codequality.mdc` |
+| Scope / simplicity | `anti-overengineering.mdc` |
+| Testing (Python) | `testing.mdc` |
+| Docker | `docker.mdc` |
+| ADRs | `adr.mdc` |
+
+---
+
+## Scaffolding
+
+When bootstrapping or normalizing the repository structure, use the **repo-planner** agent to select compatible versions and produce the implementation plan before scaffolding.

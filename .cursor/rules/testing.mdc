@@ -1,0 +1,63 @@
+---
+description: Python testing standards.
+globs:
+  - "**/*.py"
+alwaysApply: false
+---
+
+# Testing Standards
+
+Use pytest.
+
+Write tests for:
+
+- new features
+- bug fixes
+- regressions
+
+---
+
+## Test Structure
+
+Arrange
+
+Act
+
+Assert
+
+---
+
+## Mocking
+
+Mock external systems only.
+
+Avoid mocking business logic.
+
+---
+
+## Coverage
+
+Test:
+
+- happy paths
+- validation
+- failures
+- exceptions
+- corner cases
+---
+
+## Naming
+
+```
+test_<feature>.py
+```
+
+Function names should describe behavior.
+
+---
+
+## Fixtures
+
+Prefer reusable fixtures.
+
+Avoid duplicated setup.

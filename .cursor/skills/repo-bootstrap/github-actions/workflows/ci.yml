@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.12.13"
+  NODE_VERSION: "24"
+  PNPM_VERSION: "9.15.0"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup toolchain
+        uses: ./.github/actions/setup-toolchain
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          pnpm-version: ${{ env.PNPM_VERSION }}
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Build API
+        run: pnpm exec nx build api
+
+      - name: Build web
+        run: pnpm exec nx build web
+
+      - name: Build API Docker image
+        run: docker build -t notifications-hub-api apps/api
+
+      - name: Build web Docker image
+        run: docker build -f apps/web/Dockerfile -t notifications-hub-web --target base .
+
+  test:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/notifications_hub_test
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: notifications_hub_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup toolchain
+        uses: ./.github/actions/setup-toolchain
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          pnpm-version: ${{ env.PNPM_VERSION }}
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Run API tests
+        run: cd apps/api && pytest tests/ -v
+
+      - name: Lint web
+        run: pnpm exec nx lint web

@@ -1,0 +1,727 @@
+---
+globs: **/*.ts, **/*.tsx, **/*.d.ts
+alwaysApply: false
+---
+# Next.js 15+ Standards (App Router)
+
+## General Principles
+
+* Use the **App Router** (`app/`) for all new development.
+* Prefer **React Server Components (RSC)** by default.
+* Only add `"use client"` when browser APIs, client-side state, or event handlers are required.
+* Keep client bundles as small as possible.
+
+---
+
+## Project Structure
+
+Recommended structure:
+
+```text
+src/
+  app/
+    (routes)/
+    api/
+    layout.tsx
+    page.tsx
+    loading.tsx
+    error.tsx
+    not-found.tsx
+
+  components/
+    atoms/
+    molecules/
+    organisms/
+    templates/
+
+  features/
+  hooks/
+  lib/
+  services/
+  store/
+  types/
+  utils/
+```
+
+Group related route segments using route groups when appropriate.
+
+---
+
+## Server vs Client Components
+
+### Server Components (Default)
+
+Use Server Components for:
+
+* Data fetching
+* Authentication checks
+* Database queries
+* Static content
+* SEO
+* Rendering layouts
+* Passing data to client components
+
+Do not use:
+
+* `useState`
+* `useEffect`
+* Browser APIs
+* Event handlers
+
+### Client Components
+
+Add `"use client"` only when using:
+
+* `useState`
+* `useEffect`
+* `useReducer`
+* `useRef`
+* Event handlers (`onClick`, `onChange`, etc.)
+* Browser APIs (`window`, `document`, `localStorage`)
+* Redux
+* Context providers that require client state
+
+Minimize the number of client components.
+
+---
+
+## Data Fetching
+
+Prefer server-side data fetching:
+
+```ts
+const users = await getUsers();
+```
+
+Avoid fetching the same data again on the client unless necessary.
+
+Use:
+
+* Async Server Components
+* Server Actions
+* Route Handlers (`app/api`)
+* React `cache()` when appropriate
+
+---
+
+## Server Actions
+
+Prefer Server Actions for:
+
+* Form submissions
+* Mutations
+* CRUD operations
+* Database updates
+
+Keep validation on the server.
+
+Do not expose sensitive business logic to the client.
+
+---
+
+## Routing
+
+Use:
+
+* `layout.tsx`
+* `page.tsx`
+* `loading.tsx`
+* `error.tsx`
+* `not-found.tsx`
+
+Prefer nested layouts to avoid duplication.
+
+---
+
+## API Design
+
+Use Route Handlers:
+
+```text
+app/api/users/route.ts
+```
+
+Keep handlers:
+
+* Small
+* Typed
+* Validated
+* Secure
+
+Return appropriate HTTP status codes.
+
+---
+
+## State Management
+
+Prefer the following order:
+
+1. Server state (Server Components)
+2. URL search params
+3. Local component state
+4. React Context
+5. Redux Toolkit (only for shared client-side application state)
+
+Do not duplicate server state in Redux.
+
+---
+
+## Caching
+
+Leverage Next.js caching strategies:
+
+* Static rendering
+* Dynamic rendering when required
+* Revalidation
+* Cache tags
+* `revalidatePath`
+* `revalidateTag`
+
+Avoid unnecessary client-side refetching.
+
+---
+
+## Performance
+
+* Keep components server-rendered whenever possible.
+* Lazy-load heavy client components with `next/dynamic`.
+* Optimize images using `next/image`.
+* Use `next/font` for fonts.
+* Avoid unnecessary `"use client"` directives.
+* Keep JavaScript bundles small.
+
+---
+
+## SEO
+
+Use the Metadata API:
+
+* `generateMetadata`
+* `metadata`
+
+Avoid manually managing document head elements.
+
+Ensure:
+
+* Meaningful page titles
+* Meta descriptions
+* Open Graph metadata
+* Canonical URLs when appropriate
+
+---
+
+## Images
+
+Always use:
+
+```tsx
+<Image />
+```
+
+instead of `<img>`.
+
+Provide:
+
+* `alt`
+* `width`
+* `height`
+* Responsive sizing
+
+---
+
+## Navigation
+
+Use:
+
+* `next/link`
+* `useRouter()` only in client components
+
+Prefer declarative navigation.
+
+---
+
+## Environment Variables
+
+* Store secrets only in server-side environment variables.
+* Prefix client-exposed variables with `NEXT_PUBLIC_`.
+* Never expose secrets to the client.
+
+---
+
+## Error Handling
+
+Implement:
+
+* `error.tsx`
+* `not-found.tsx`
+* Loading states
+* Graceful fallbacks
+
+Do not expose internal errors to users.
+
+---
+
+## Security
+
+* Validate all user input.
+* Sanitize data rendered from external sources.
+* Protect Server Actions against unauthorized access.
+* Perform authentication and authorization on the server.
+* Never trust client input.
+
+---
+
+## Accessibility
+
+All pages and components must comply with:
+
+* WCAG 2.2 AA
+* ADA
+* Section 508
+
+Use semantic HTML, keyboard accessibility, and proper focus management.
+
+---
+
+## Decision Process
+
+When implementing a feature:
+
+1. Can it be a Server Component?
+2. Does it require client-side interactivity?
+3. Does it belong in an existing Atomic Design layer?
+4. Can server-side data fetching or a Server Action handle the requirement?
+5. Is Redux truly necessary, or would local state or Context suffice?
+6. Optimize for performance, accessibility, maintainability, and SEO.
+
+
+## Form Standards
+
+No User Input Without Forms 
+All forms must use React Hook Form as the single source of truth.
+
+Do not manage form state using `useState` unless the state is unrelated to form values (dialogs, UI state, tabs, etc).
+
+---
+
+# Form Library
+
+Always use
+
+- React Hook Form
+- Zod
+- @hookform/resolvers/zod
+
+Never use
+
+- Formik
+- uncontrolled validation
+- custom validation logic inside submit handlers
+
+---
+
+# Schema First
+
+Every form must define a Zod schema.
+
+Example
+
+```ts
+const schema = z.object({
+    firstName: z.string().min(1),
+    email: z.email(),
+    age: z.number().optional(),
+})
+````
+
+Infer the TypeScript type.
+
+```ts
+type FormData = z.infer<typeof schema>;
+```
+
+Never duplicate interfaces manually.
+
+---
+
+# useForm
+
+Always initialize using
+
+```ts
+const form = useForm<FormData>({
+    resolver: zodResolver(schema),
+    defaultValues,
+    mode: "onBlur",
+})
+```
+
+Preferred validation mode
+
+* onBlur
+
+Allowed
+
+* onSubmit
+* onTouched
+
+Avoid
+
+* onChange unless explicitly required
+
+---
+
+# Form Provider
+
+Large forms must use
+
+```tsx
+<FormProvider {...form}>
+```
+
+Nested components should consume
+
+```ts
+useFormContext()
+```
+
+Do not prop drill
+
+* register
+* control
+* errors
+* setValue
+* watch
+
+---
+
+# Controller Usage
+
+Prefer
+
+```tsx
+register()
+```
+
+Use Controller only for
+
+* Material UI
+* Date Pickers
+* Autocomplete
+* Select
+* Rich editors
+* Custom controlled components
+
+Never wrap simple inputs inside Controller.
+
+---
+
+# Custom Form Components
+
+Reusable inputs should encapsulate integration.
+
+Example
+
+```
+TextField
+SelectField
+CheckboxField
+DatePickerField
+PhoneField
+CurrencyField
+```
+
+Component accepts
+
+* name
+* label
+* helperText
+
+Internally consumes
+
+```
+useFormContext()
+```
+
+Do not expose register outside.
+
+---
+
+# Validation
+
+Validation belongs inside Zod.
+
+Never write
+
+```ts
+if (!values.email)
+```
+
+or
+
+```ts
+if (password.length < 8)
+```
+
+inside submit handlers.
+
+Business validation belongs in services.
+
+Schema validation belongs in Zod.
+
+---
+
+# Default Values
+
+Always provide
+
+```ts
+defaultValues
+```
+
+Never allow undefined form state.
+
+Async data should call
+
+```ts
+reset(data)
+```
+
+instead of rebuilding the form.
+
+---
+
+# Watching Values
+
+Prefer
+
+```ts
+useWatch()
+```
+
+instead of
+
+```ts
+watch()
+```
+
+when only a subset of fields is needed.
+
+Avoid watching the entire form.
+
+---
+
+# Error Handling
+
+Always display
+
+```tsx
+fieldState.error?.message
+```
+
+or
+
+```tsx
+errors.field?.message
+```
+
+Never ignore validation errors.
+
+---
+
+# Submission
+
+Submit only using
+
+```tsx
+handleSubmit(onSubmit)
+```
+
+Never manually preventDefault.
+
+---
+
+# Async Submission
+
+Disable the submit button while submitting.
+
+Use
+
+```ts
+form.formState.isSubmitting
+```
+
+Show loading indicators.
+
+Prevent duplicate submissions.
+
+---
+
+# Server Errors
+
+Convert backend validation errors into RHF errors.
+
+Example
+
+```ts
+setError("email", {
+    message: "Email already exists",
+})
+```
+
+Do not show generic alerts.
+
+---
+
+# Reset
+
+Use
+
+```ts
+reset()
+```
+
+after successful submission.
+
+Do not mutate fields individually.
+
+---
+
+# Dirty State
+
+Warn users before navigation when
+
+```ts
+formState.isDirty
+```
+
+is true.
+
+---
+
+# Field Arrays
+
+Use
+
+```ts
+useFieldArray()
+```
+
+Never manage dynamic rows using useState.
+
+---
+
+# Performance
+
+Prefer
+
+```
+register()
+```
+
+over Controller.
+
+Use
+
+```
+useWatch()
+```
+
+instead of watching the whole form.
+
+Memoize expensive field components.
+
+Split very large forms into sections.
+
+Avoid unnecessary re-renders.
+
+---
+
+# Accessibility
+
+Every field must have
+
+* label
+* id
+* aria-invalid
+* helper text
+
+Errors must be associated using
+
+```
+aria-describedby
+```
+
+Required fields should be indicated visually and semantically.
+
+---
+
+# Material UI
+
+Always integrate using Controller.
+
+Example
+
+```tsx
+<Controller
+    control={control}
+    name="country"
+    render={({ field, fieldState }) => (
+        <TextField
+            {...field}
+            error={!!fieldState.error}
+            helperText={fieldState.error?.message}
+        />
+    )}
+/>
+```
+
+---
+
+# Folder Structure
+
+```
+forms/
+    UserForm/
+        UserForm.tsx
+        schema.ts
+        defaultValues.ts
+        components/
+        hooks/
+```
+
+Avoid placing validation inside UI files.
+
+---
+
+# Testing
+
+Every form should have tests covering
+
+* successful submit
+* required validation
+* invalid inputs
+* async submit
+* server errors
+* reset behavior
+
+---
+
+# AI Review Checklist
+
+Before generating or reviewing code ensure
+
+* Uses React Hook Form
+* Uses Zod
+* Uses zodResolver
+* No duplicated types
+* No useState for form fields
+* Uses register where possible
+* Uses Controller only when necessary
+* Uses FormProvider for nested forms
+* Displays validation errors
+* Handles loading state
+* Handles backend validation
+* Uses reset() correctly
+* Accessible labels and error messages
+* No unnecessary re-renders

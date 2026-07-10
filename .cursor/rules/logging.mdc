@@ -1,0 +1,299 @@
+---
+description: Enforce structured logging conventions across the application.
+globs:
+  - "**/*.py"
+alwaysApply: true
+---
+
+# Structured Logging Rules
+
+## Core Principle
+
+All application logging must use the centralized structured logging system under `app.logging`.
+
+Do **not** use Python's standard logging APIs directly in application code.
+
+---
+
+# Required Logging APIs
+
+Always use one of the typed emitters:
+
+- `log_startup`
+- `log_http`
+- `log_api`
+- `log_background_job`
+
+Never call:
+
+- `logging.getLogger()`
+- `logging.info()`
+- `logging.debug()`
+- `logging.warning()`
+- `logging.error()`
+- `logging.exception()`
+- `logger.info()`
+- `logger.debug()`
+- `logger.warning()`
+- `logger.error()`
+- `logger.exception()`
+
+outside the `app/logging` package.
+
+---
+
+# Log Categories
+
+Every structured log belongs to exactly one category.
+
+## startup
+
+Use for:
+
+- application startup
+- shutdown
+- migrations
+- worker initialization
+- notification setup
+- Temporal worker lifecycle
+
+Required detail fields:
+
+- `kind`
+- `actionName`
+- `status`
+
+---
+
+## http-log
+
+Used only by `RequestLoggingMiddleware`.
+
+One log entry per completed request.
+
+Include:
+
+- request_id
+- method
+- path
+- status
+- client IP
+- duration
+- user context
+
+Do not emit for:
+
+- `/health`
+- `/health/*`
+
+---
+
+## api-log
+
+Use for domain events such as:
+
+- GraphQL execution
+- database operations
+- remote API calls
+- audit events
+- permission checks
+
+Supported kinds include:
+
+- app
+- graphql
+- database
+- remote-api
+- audit
+
+Permission denials and security-sensitive events should use:
+
+```python
+kind="audit"
+```
+
+---
+
+## background-job-log
+
+Use for:
+
+- completed Temporal activities
+- completed workflows
+- asynchronous jobs
+
+Include:
+
+- request_id (if propagated)
+- workflow/job ids
+- worker id
+- attempt
+- execution duration
+- status
+
+Do not emit workflow completion logs during Temporal replay.
+
+---
+
+# Payload Shape
+
+Every log must follow this structure.
+
+```json
+{
+  "timestamp": "...",
+  "level": "...",
+  "type": "...",
+  "detail": { }
+}
+```
+
+Do not invent alternate schemas.
+
+---
+
+# Request Correlation
+
+HTTP requests use `x-request-id`.
+
+The request ID must be propagated through:
+
+- GraphQL
+- background jobs
+- Temporal workflows
+- Temporal activities
+- notifications
+
+Do not generate a new request ID inside downstream code when one already exists.
+
+Notification events should publish:
+
+```text
+correlation_id = request_id
+```
+
+---
+
+# Sensitive Data
+
+Never log:
+
+- passwords
+- secrets
+- tokens
+- API keys
+- Authorization headers
+- credentials
+- PII
+
+Sensitive values must be redacted.
+
+Example:
+
+```json
+{
+  "token": "***REDACTED***"
+}
+```
+
+Never bypass sanitization.
+
+---
+
+# Output Format
+
+Logging format is selected via:
+
+- `LOG_FORMAT=text`
+- `LOG_FORMAT=json`
+
+Defaults:
+
+- development → text
+- production (`ENV_NAME=prod`) → json
+
+Do not hardcode formatter selection.
+
+---
+
+# Runtime Rules
+
+Only structured records are emitted.
+
+Unstructured records on the `app` logger namespace are dropped.
+
+Every structured log must include:
+
+- `type`
+- `detail`
+
+Request IDs are attached automatically from context if omitted.
+
+---
+
+# Third-Party Logging
+
+Suppress noisy libraries.
+
+Keep these loggers at WARNING unless explicitly required:
+
+- uvicorn
+- SQLAlchemy
+- boto3
+- botocore
+- httpx
+- urllib3
+
+Do not route third-party logs through structured application emitters.
+
+---
+
+# Middleware Responsibilities
+
+`RequestLoggingMiddleware` is responsible for:
+
+- request ID lifecycle
+- HTTP request logging
+- request timing
+- correlation propagation
+
+Application handlers should not duplicate HTTP logging.
+
+---
+
+# Background Jobs
+
+Jobs started from HTTP requests must propagate the active request ID into:
+
+- workflow arguments
+- activity arguments
+
+This enables end-to-end correlation across synchronous and asynchronous execution.
+
+---
+
+# Operational Constraints
+
+- Call `setup_logging()` once per process.
+- Logging initialization must be idempotent.
+- Write logs to stderr.
+- `LOG_LEVEL` filters only the `app` logger.
+- Normalize duration values to microsecond precision.
+- Structured formatters apply only to the `app` logger.
+
+---
+
+# Code Generation Guidance
+
+When generating Python code:
+
+1. Import logging only from `app.logging`.
+2. Use the appropriate typed emitter.
+3. Never create ad hoc loggers.
+4. Never emit free-form log messages.
+5. Preserve request correlation.
+6. Avoid logging duplicate events.
+7. Sanitize all potentially sensitive values.
+8. Use `api-log` for audit and permission events.
+9. Use `background-job-log` for Temporal completion events.
+10. Follow the standardized payload schema at all times.
